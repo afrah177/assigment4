@@ -218,7 +218,135 @@ namespace Vaccination
         // vaccinateChildren: whether to vaccinate people younger than 18
         public static string[] CreateVaccinationOrder(string[] input, int doses, bool vaccinateChildren)
         {
-            // Replace with your own code.
+            People people = new People();
+            List<People> changeToList = new List<People>();
+            List<People> transformbirthofdate = new List<People>();
+            List<People> novaccitionforchildren = new List<People>();
+            List<People> vaccinationforall = new List<People>();
+            List<People> orderPeople = new List<People>();
+            int age = int.Parse(people.BirthOfDate.Substring(0, 8));
+            int doseforpeople = 2;
+
+
+            foreach (string personData in input)
+            {
+                string[] lines = personData.Split(',');
+
+                if (lines.Length >= 6)
+                {
+                    string birthOfDate = lines[0];
+                    string lastName = lines[1];
+                    string firstName = lines[2];
+                    int personInRiskGroup = int.Parse(lines[3]);
+                    int groupForInfection = int.Parse(lines[4]);
+                    int healthCareStaff = int.Parse(lines[5]);
+
+                    var person = new People
+                    {
+                        BirthOfDate= birthOfDate,
+                        LastName = lastName,
+                        FirstName = firstName,
+                        PersonsInRiskGroup= personInRiskGroup,
+                        GroupforInfection = groupForInfection,
+                        HealthCareStaff = healthCareStaff
+                    };
+                    changeToList.Add(person);
+                }
+            }
+
+            foreach (var person in changeToList)
+            {
+                string BirtOfDate = person.BirthOfDate;
+
+                if (BirtOfDate.Length == 10)
+                {
+                    BirtOfDate = $"19{BirtOfDate.Insert(6, "-")}";
+                }
+                else if (BirtOfDate.Length == 11)
+                {
+                    BirtOfDate = $"19{BirtOfDate}";
+                }
+                else if (BirtOfDate.Length == 12)
+                {
+                    BirtOfDate = BirtOfDate.Insert(8, "-");
+                }
+
+                person.BirthOfDate = BirtOfDate;
+
+                People changeBirthOfDate = new People
+                {
+                 BirthOfDate = BirtOfDate,
+                 LastName = person.LastName,
+                 FirstName = person.FirstName,
+                 PersonsInRiskGroup = person.PersonsInRiskGroup,
+                 GroupforInfection= person.GroupforInfection,
+                 HealthCareStaff = person.HealthCareStaff,
+
+                };
+                transformbirthofdate.Add(changeBirthOfDate);
+
+                People excludechildren = new People
+                {
+                    BirthOfDate = BirtOfDate,
+                    LastName = person.LastName,
+                    FirstName = person.FirstName,
+                    PersonsInRiskGroup = person.PersonsInRiskGroup,
+                    GroupforInfection = person.GroupforInfection,
+                    HealthCareStaff = person.HealthCareStaff,
+
+                };
+                novaccitionforchildren.Add(excludechildren);
+
+
+            }
+
+            if (!vaccinateChildren)
+            {
+                if (age <= 20050101)
+                {
+                    
+                    List<People> order = novaccitionforchildren
+                   .OrderBy(person => person.BirthOfDate)
+                   .ThenBy(person => person.HealthCareStaff == 1)
+                   .ThenBy(person => age <= 19580101)
+                   .ThenBy(person => person.PersonsInRiskGroup == 1)
+                   .ToList();
+
+                    List<People> notinorderpepole = novaccitionforchildren
+                   .OrderBy(person => person.BirthOfDate)
+                   .Except(orderPeople)
+                   .ToList();
+                    orderPeople = order.Concat(notinorderpepole).ToList();
+                }
+
+            }
+            else
+            {
+                List<People> order = vaccinationforall
+                      .OrderBy(person => person.BirthOfDate)
+                      .ThenBy(person => person.HealthCareStaff == 1)
+                      .ThenBy(person => age <= 19580101)
+                      .ThenBy(person => person.PersonsInRiskGroup == 1)
+                      .ToList();
+
+                List<People> notinorderpepole = vaccinationforall
+               .OrderBy(person => person.BirthOfDate)
+               .Except(orderPeople)
+               .ToList();
+                orderPeople = order.Concat(notinorderpepole).ToList();
+            }
+            foreach (var person in orderPeople)
+            {
+                PeopleDose listPeopleDose = new PeopleDose
+                {
+                    DoseBrithOfDate = person.BirthOfDate,
+                    DoseLastName = person.LastName,
+                    DoseFirstName = person.FirstName,
+                    DoseAmunt = doseforpeople - person.GroupforInfection,
+                };
+
+                peopleDoses.Add(listPeopleDose);
+            }
             return new string[0];
         }
 
