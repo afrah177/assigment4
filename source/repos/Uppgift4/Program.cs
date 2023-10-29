@@ -33,7 +33,7 @@ namespace Vaccination
     {
         private static List<People> peopleList = new List<People>();
         private static string fileInput = @"C:\Vaccin\filein.csv";
-        private static int vaccinqaunteti = 0;
+        private static int vaccinQuantity = 0;
         private static bool age = false;
 
         private static List<PeopleDose> peopleDoses = new List<PeopleDose>();
@@ -45,11 +45,6 @@ namespace Vaccination
         public static void Main()
         {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-
-            if (!File.Exists(fileInput))
-            {
-                using (File.Create(fileInput)) { }
-            }
 
             while (running)
             {
@@ -107,8 +102,29 @@ namespace Vaccination
         }
         public static void PriorityList()
         {
-            CreateVaccinationOrder(ReadFromIndataCSV(), vaccinqaunteti, age);
 
+            File.WriteAllLines(fileOutput, CreateVaccinationOrder(ReadFromIndataCSV(), vaccinQuantity, age));
+
+            foreach (var person in peopleDoses)
+            {
+                while (vaccinQuantity > 0)
+                {
+                    if (person.DoseAmunt >= 2 && vaccinQuantity >= 2)
+                    {
+                        person.DoseAmunt -= 2;
+                        vaccinQuantity-= 2;
+                    }
+                    else if (person.DoseAmunt >= 1 && vaccinQuantity >= 1)
+                    {
+                        person.DoseAmunt -= 1;
+                        vaccinQuantity -= 1;
+                    }
+                    else
+                    {
+                        break; 
+                    }
+                }
+            }
         }
 
         public static void AddPeople()
@@ -156,8 +172,8 @@ namespace Vaccination
         public static void QuantityVaccine()
         {
             Console.Write("Antal dos ");
-            vaccinqaunteti = int.Parse(Console.ReadLine());
-            Console.WriteLine("Du har lagt till " + vaccinqaunteti);
+            vaccinQuantity = int.Parse(Console.ReadLine());
+            Console.WriteLine("Du har lagt till " + vaccinQuantity);
         }
 
         public static void Indata()
@@ -339,47 +355,30 @@ namespace Vaccination
             {
                 PeopleDose listPeopleDose = new PeopleDose
                 {
-                    DoseBrithOfDate = person.BirthOfDate,
-                    DoseLastName = person.LastName,
-                    DoseFirstName = person.FirstName,
-                    DoseAmunt = doseforpeople - person.GroupforInfection,
-                };
-
+                DoseBrithOfDate = person.BirthOfDate,
+                DoseLastName = person.LastName,
+                DoseFirstName = person.FirstName,
+                DoseAmunt = doseforpeople-person.GroupforInfection,
+               };
                 peopleDoses.Add(listPeopleDose);
+
             }
-            return new string[0];
+
+            var changePeople = peopleDoses;
+
+            string[] outputLines =
+            changePeople.Select(person =>
+            $"{person.DoseBrithOfDate}, {person.DoseLastName}, {person.DoseFirstName}, {person.DoseAmunt}")
+            .ToArray();
+
+            return outputLines;
         }
 
         public static string[] ReadFromIndataCSV()
         {
-
-
             string[] lines = File.ReadAllLines(fileInput);
 
-            foreach (string line in lines)
-            {
-                string[] entries = line.Split(',');
-
-                string britofdate = entries[0];
-                string lastName = entries[1];
-                string firstName = entries[2];
-                int personsInRiskGroup = int.Parse(entries[3]);
-                int groupforInfection = int.Parse(entries[4]);
-                int healthCareStaff = int.Parse(entries[5]);
-
-                peopleList.Add(new People
-                {
-                    BirthOfDate = britofdate,
-                    LastName = lastName,
-                    FirstName = firstName,
-                    PersonsInRiskGroup = personsInRiskGroup,
-                    GroupforInfection = groupforInfection,
-                    HealthCareStaff = healthCareStaff
-                });
-            }
-
             return lines;
-
         }
 
         public static void SaveToIndataCSV()
@@ -398,16 +397,6 @@ namespace Vaccination
             }
 
             File.WriteAllLines(fileInput, list);
-        }
-
-        public static void ReadFromOutdataCSV()
-        {
-
-        }
-
-        public static void SaveToOutdataCSV()
-        {
-
         }
 
         public static int ShowChoice(string heading)
